@@ -1,7 +1,6 @@
 "use client";
 
 import { useGLTF } from "@react-three/drei";
-import { useThree, useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
@@ -17,7 +16,7 @@ const Viewer3D = () => {
     box.getSize(modelSize);
 
     // 원하는 크기로 스케일링합니다.
-    const desiredSize = 5; // 원하는 크기로 설정하세요
+    const desiredSize = 7; // 원하는 크기로 설정하세요
     const scaleFactor =
       desiredSize / Math.max(modelSize.x, modelSize.y, modelSize.z);
 
