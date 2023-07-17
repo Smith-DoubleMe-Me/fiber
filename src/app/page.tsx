@@ -10,8 +10,8 @@ export default function Home() {
   return (
     <Suspense fallback={"loading"}>
       <main>
-        <div className="w-screen h-screen mt-20">
-          <Canvas>
+        <div className="w-screen h-screen">
+          <Canvas camera={{ position: [0, 10, 20], fov: 75 }}>
             <Environment preset="sunset" />
             <Viewer3D />
             <OrbitControls />
