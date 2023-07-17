@@ -7,7 +7,7 @@ import * as THREE from "three";
 
 const Viewer3D = () => {
   const modelRef = useRef<any>(null);
-  const path = "/models/door.glb";
+  const path = "/models/test1.glb";
 
   const result = useGLTF(path);
 
