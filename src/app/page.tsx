@@ -1,19 +1,23 @@
-'use client'
+"use client";
 
-import { Canvas } from "@react-three/fiber"
+import { Canvas } from "@react-three/fiber";
+import { Environment, OrbitControls } from "@react-three/drei";
+import { Suspense, lazy } from "react";
+
+const Viewer3D = lazy(() => import("@/components/Viewer3D"));
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center">
-      <h1 className="text-5xl font-bold text-blue-100">Fiber test</h1>
-      <div className="w-screen h-screen">
-        <Canvas>
-          <mesh>
-            <boxGeometry />
-            <meshStandardMaterial />
-          </mesh>
-        </Canvas>
-      </div>
-    </main>
-  )
+    <Suspense fallback={"loading"}>
+      <main>
+        <div className="w-screen h-screen mt-20">
+          <Canvas>
+            <Environment preset="sunset" />
+            <Viewer3D />
+            <OrbitControls />
+          </Canvas>
+        </div>
+      </main>
+    </Suspense>
+  );
 }
