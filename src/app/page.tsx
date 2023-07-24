@@ -1,8 +1,8 @@
 import ModelCanvas from "@/components/ModelCanvas";
 
-export default function Home() {
+export default async function Home() {
   return (
-    <main>
+    <main className="w-full" style={{ height: "2000px" }}>
       <ModelCanvas />
     </main>
   );
