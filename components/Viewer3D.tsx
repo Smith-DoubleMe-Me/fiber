@@ -20,32 +20,51 @@ const Viewer3D = ({
   result.scene.updateMatrixWorld();
 
   const modelRef = useRef<any>();
-  // const [capturing, setCapturing] = useState<boolean>(false);
-  const [currentAngle, setCurrentAngle] = useState<number>(0);
 
-  // const captureImage = () => {
-  //   if (!capturing) {
-  //     setCapturing(true);
-  //   }
-  // };
+  const [currentAngle, setCurrentAngle] = useState<number>(0);
+  const [isRotating, setIsRotating] = useState<boolean>(true);
+
+  const rotationSpeed = 0.01;
+  const snapshotAngleInterval = Math.PI / 6;
 
   useFrame(() => {
-    if (capturing) {
-      modelRef.current.rotation.y += (Math.PI / 180) * 30;
-      setCurrentAngle(prevState => prevState + 30);
+    if (modelRef.current && capturing && isRotating) {
+      if (modelRef.current.rotation.y === 0) capture();
+
+      modelRef.current.rotation.y += rotationSpeed;
+
+      if (modelRef.current.rotation.y >= currentAngle + snapshotAngleInterval) {
+        setCurrentAngle(modelRef.current.rotation.y);
+        // console.log("sdfsf");
+        capture();
+      }
+
+      if (currentAngle >= Math.PI * 2) {
+        setIsRotating(false);
+        setCapturing(false);
+        modelRef.current.rotation.y = 0;
+      }
     }
   });
 
-  useEffect(() => {
-    if (capturing) {
-      capture();
+  // useFrame(() => {
+  //   if (capturing) {
+  //     modelRef.current.rotation.y += (Math.PI / 180) * 30;
+  //     setCurrentAngle(prevState => prevState + 30);
+  //   }
+  // });
 
-      if (currentAngle >= 360) {
-        setCapturing(false);
-        setCurrentAngle(0);
-      }
-    }
-  }, [capturing, currentAngle]);
+  // useEffect(() => {
+  //   if (capturing) {
+  //     capture();
+
+  //     if (currentAngle >= 360) {
+  //       setCapturing(false);
+  //       setCurrentAngle(0);
+  //       // window.location.reload();
+  //     }
+  //   }
+  // }, [capturing, currentAngle]);
 
   return <primitive object={result.scene} ref={modelRef} />;
 };

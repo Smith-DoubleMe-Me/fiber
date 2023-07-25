@@ -13,10 +13,10 @@ const ModelCanvas = () => {
   const cameraRef = useRef<any>();
   const currentAngleRef = useRef<number>(0);
 
-  // const path = "/models/deer.glb";
+  const path = "/models/deer.glb";
 
-  // const result = useGLTF(path);
-  // result.scene.updateMatrixWorld();
+  const result = useGLTF(path);
+  result.scene.updateMatrixWorld();
 
   const [capturing, setCapturing] = useState<boolean>(false);
 
@@ -40,6 +40,50 @@ const ModelCanvas = () => {
     link.click();
     document.body.removeChild(link);
   };
+
+  // const Viewer = () => {
+  //   const { camera } = useThree();
+
+  //   cameraRef.current = camera;
+
+  //   return <primitive object={result.scene} />;
+  // };
+
+  // const handleSnapshot = useCallback(async () => {
+  //   const angles = [];
+
+  //   for (let i = 0; i < 13; i++) {
+  //     angles.push((Math.PI / 180) * (i * 30));
+  //   }
+
+  //   if (currentAngleRef.current >= angles.length) return;
+
+  //   const angle = angles[currentAngleRef.current];
+  //   // controlsRef.current.target.set(0, 0, 0);
+  //   controlsRef.current.enabled = false;
+
+  //   cameraRef.current.position.x = Math.cos(angle) * 10;
+  //   cameraRef.current.position.z = Math.sin(angle) * 10;
+  //   cameraRef.current.lookAt(0, 0, 0);
+
+  //   setTimeout(() => {
+  //     const strMime = "image/jpg";
+  //     const strDownloadMime = "image/octet-stream";
+
+  //     const imgData = canvasRef.current
+  //       .toDataURL(strMime)
+  //       .replace(strMime, strDownloadMime);
+  //     const link = document.createElement("a");
+  //     document.body.appendChild(link);
+  //     link.download = "test.jpg";
+  //     link.href = imgData;
+  //     link.click();
+  //     document.body.removeChild(link);
+  //     currentAngleRef.current += 1;
+  //     controlsRef.current.enabled = true;
+  //     handleSnapshot();
+  //   }, 100);
+  // }, [canvasRef.current, controlsRef.current]);
 
   return (
     <div>
