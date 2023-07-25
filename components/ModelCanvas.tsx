@@ -19,10 +19,12 @@ const ModelCanvas = () => {
   result.scene.updateMatrixWorld();
 
   const [capturing, setCapturing] = useState<boolean>(false);
+  const [isRotating, setIsRotating] = useState<boolean>(false);
 
   const captureImage = () => {
-    if (!capturing) {
+    if (!capturing && !isRotating) {
       setCapturing(true);
+      setIsRotating(true);
     }
   };
 
@@ -103,6 +105,8 @@ const ModelCanvas = () => {
                 capturing={capturing}
                 setCapturing={setCapturing}
                 capture={capture}
+                isRotating={isRotating}
+                setIsRotating={setIsRotating}
               />
             </Stage>
             <OrbitControls ref={controlsRef} />
