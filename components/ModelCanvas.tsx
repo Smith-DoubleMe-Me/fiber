@@ -1,17 +1,80 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { Environment, OrbitControls, Stage, useGLTF } from "@react-three/drei";
+import { memo, useRef, useState } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import {
+  Environment,
+  OrbitControls,
+  Stage,
+  useGLTF,
+  Html,
+} from "@react-three/drei";
 import { Suspense } from "react";
 
 import Viewer3D from "@/components/Viewer3D";
 
+function Animate({ controls, lerping, to, target }: any) {
+  useFrame(({ camera }, delta) => {
+    if (lerping) {
+      camera.position.lerp(to, delta * 2);
+      controls.current.target.lerp(target, delta * 2);
+    }
+  });
+
+  return <></>;
+}
+
+const Annotations = memo(({ selected, gotoAnnotation, annotations }: any) => {
+  return (
+    <>
+      {annotations.length > 0 &&
+        annotations.map((a: any, i: number) => {
+          return (
+            <Html key={i} position={[a.lookAt.x, a.lookAt.y, a.lookAt.z]}>
+              <svg
+                height="34"
+                width="34"
+                transform="translate(-16 -16)"
+                style={{ cursor: "pointer" }}
+              >
+                <circle
+                  cx="17"
+                  cy="17"
+                  r="16"
+                  stroke="white"
+                  strokeWidth="2"
+                  fill="rgba(0,0,0,.66)"
+                  onClick={() => gotoAnnotation(i)}
+                />
+                <text
+                  x="12"
+                  y="22"
+                  fill="white"
+                  fontSize={17}
+                  fontFamily="monospace"
+                  style={{ pointerEvents: "none" }}
+                >
+                  {i + 1}
+                </text>
+              </svg>
+              {a.description && i === selected && (
+                <div
+                  id={"desc_" + i}
+                  className="annotationDescription"
+                  dangerouslySetInnerHTML={{ __html: a.description }}
+                />
+              )}
+            </Html>
+          );
+        })}
+    </>
+  );
+});
+
 const ModelCanvas = () => {
   const canvasRef = useRef<any>();
   const controlsRef = useRef<any>();
-  const cameraRef = useRef<any>();
-  const currentAngleRef = useRef<number>(0);
+  const annotationRef = useRef<any>(0);
 
   const path = "/models/deer.glb";
 
@@ -20,6 +83,11 @@ const ModelCanvas = () => {
 
   const [capturing, setCapturing] = useState<boolean>(false);
   const [isRotating, setIsRotating] = useState<boolean>(false);
+  const [annotations, setAnnotations] = useState<any[]>([]);
+  const [selected, setSelected] = useState<number>(-1);
+  const [lerping, setLerping] = useState<boolean>(false);
+  const [to, setTo] = useState<any>();
+  const [target, setTarget] = useState<any>();
 
   const captureImage = () => {
     if (!capturing && !isRotating) {
@@ -35,6 +103,7 @@ const ModelCanvas = () => {
     const imgData = canvasRef.current
       .toDataURL(strMime)
       .replace(strMime, strDownloadMime);
+
     const link = document.createElement("a");
     document.body.appendChild(link);
     link.download = "test.jpg";
@@ -43,49 +112,31 @@ const ModelCanvas = () => {
     document.body.removeChild(link);
   };
 
-  // const Viewer = () => {
-  //   const { camera } = useThree();
+  const onClickGroup = (e: any) => {
+    const { point, pointer, intersections, camera } = e;
+    setAnnotations(prevState => [
+      ...prevState,
+      {
+        cameraPos: {
+          x: camera.position.x,
+          y: camera.position.y,
+          z: camera.position.z,
+        },
+        lookAt: {
+          x: point.x,
+          y: point.y,
+          z: point.z,
+        },
+      },
+    ]);
+  };
 
-  //   cameraRef.current = camera;
-
-  //   return <primitive object={result.scene} />;
-  // };
-
-  // const handleSnapshot = useCallback(async () => {
-  //   const angles = [];
-
-  //   for (let i = 0; i < 13; i++) {
-  //     angles.push((Math.PI / 180) * (i * 30));
-  //   }
-
-  //   if (currentAngleRef.current >= angles.length) return;
-
-  //   const angle = angles[currentAngleRef.current];
-  //   // controlsRef.current.target.set(0, 0, 0);
-  //   controlsRef.current.enabled = false;
-
-  //   cameraRef.current.position.x = Math.cos(angle) * 10;
-  //   cameraRef.current.position.z = Math.sin(angle) * 10;
-  //   cameraRef.current.lookAt(0, 0, 0);
-
-  //   setTimeout(() => {
-  //     const strMime = "image/jpg";
-  //     const strDownloadMime = "image/octet-stream";
-
-  //     const imgData = canvasRef.current
-  //       .toDataURL(strMime)
-  //       .replace(strMime, strDownloadMime);
-  //     const link = document.createElement("a");
-  //     document.body.appendChild(link);
-  //     link.download = "test.jpg";
-  //     link.href = imgData;
-  //     link.click();
-  //     document.body.removeChild(link);
-  //     currentAngleRef.current += 1;
-  //     controlsRef.current.enabled = true;
-  //     handleSnapshot();
-  //   }, 100);
-  // }, [canvasRef.current, controlsRef.current]);
+  function gotoAnnotation(idx: number) {
+    setLerping(true);
+    setTo(annotations[idx].cameraPos);
+    setTarget(annotations[idx].lookAt);
+    setSelected(idx);
+  }
 
   return (
     <div>
@@ -97,19 +148,40 @@ const ModelCanvas = () => {
       </button>
       <div className="w-1200 h-600 mt-20 border-2">
         <Suspense fallback={"loading"}>
-          <Canvas ref={canvasRef} gl={{ preserveDrawingBuffer: true }}>
+          <Canvas
+            ref={canvasRef}
+            gl={{ preserveDrawingBuffer: true }}
+            onWheel={() => {
+              setLerping(false);
+            }}
+            onPointerDown={() => {
+              setLerping(false);
+            }}
+          >
             <Environment preset="sunset" />
-            <Stage>
-              {/* <Viewer /> */}
+            <Stage adjustCamera={selected > -1 ? false : true}>
               <Viewer3D
                 capturing={capturing}
                 setCapturing={setCapturing}
                 capture={capture}
                 isRotating={isRotating}
                 setIsRotating={setIsRotating}
+                onClickGroup={onClickGroup}
               />
             </Stage>
+
             <OrbitControls ref={controlsRef} />
+            <Annotations
+              selected={selected}
+              gotoAnnotation={gotoAnnotation}
+              annotations={annotations}
+            />
+            <Animate
+              controls={controlsRef}
+              target={target}
+              to={to}
+              lerping={lerping}
+            />
           </Canvas>
         </Suspense>
       </div>

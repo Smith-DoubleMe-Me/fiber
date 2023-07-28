@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useGLTF } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 
 const Viewer3D = ({
   capturing,
@@ -10,12 +10,14 @@ const Viewer3D = ({
   capture,
   isRotating,
   setIsRotating,
+  onClickGroup,
 }: {
   capturing: boolean;
   setCapturing: (capture: boolean) => void;
   capture: () => void;
   isRotating: boolean;
   setIsRotating: (rotate: boolean) => void;
+  onClickGroup: (e: any) => void;
 }) => {
   const path = "/models/deer.glb";
 
@@ -29,11 +31,11 @@ const Viewer3D = ({
   const rotationSpeed = 0.01;
   const snapshotAngleInterval = (24 * Math.PI) / 180; // 24도
 
-  console.log(isRotating, capturing);
-
   useFrame(() => {
     if (modelRef.current && capturing && isRotating) {
-      if (modelRef.current.rotation.y === 0) capture();
+      if (modelRef.current.rotation.y === 0) {
+        capture();
+      }
 
       modelRef.current.rotation.y += rotationSpeed;
 
@@ -51,7 +53,11 @@ const Viewer3D = ({
     }
   });
 
-  return <primitive object={result.scene} ref={modelRef} />;
+  return (
+    <group onClick={onClickGroup} dispose={null}>
+      <primitive object={result.scene} ref={modelRef} />
+    </group>
+  );
 };
 
 export default Viewer3D;
