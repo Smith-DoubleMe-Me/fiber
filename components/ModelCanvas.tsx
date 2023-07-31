@@ -85,9 +85,7 @@ const Item = ({
   setAnnotations: (arr: any[]) => void;
 }) => {
   const [edit, setEdit] = useState<boolean>(false);
-  const [description, setDescription] = useState<string>(
-    anno.description ?? "",
-  );
+  const [description, setDescription] = useState<string>(anno.description);
 
   const handleEditAnnotation = (e: ChangeEvent<HTMLInputElement>) => {
     setDescription(e.target.value);
@@ -96,7 +94,7 @@ const Item = ({
   const handleSubmit = () => {
     const newAnnotationList = annotationList.map(item => ({
       ...item,
-      description: item.id === anno.id ? description : anno.description,
+      description: item.id === anno.id ? description : item.description,
     }));
     setAnnotations(newAnnotationList);
     setEdit(false);
@@ -115,7 +113,7 @@ const Item = ({
           type="text"
           className="w-100 border-2 border-black ml-auto"
           onChange={handleEditAnnotation}
-          defaultValue={anno.description}
+          value={description}
         />
       )}
 
@@ -137,7 +135,7 @@ const Item = ({
         </button>
       )}
       <button
-        key={i + anno.description}
+        key={i + "camera"}
         onClick={() => gotoAnnotations(i)}
         className="bg-black w-30 h-50 text-white ml-auto"
       >
