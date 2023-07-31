@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useRef, useState } from "react";
+import { ChangeEvent, memo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
   Environment,
@@ -71,6 +71,111 @@ const Annotations = memo(({ selected, gotoAnnotation, annotations }: any) => {
   );
 });
 
+const Item = ({
+  anno,
+  i,
+  gotoAnnotations,
+  annotationList,
+  setAnnotations,
+}: {
+  anno: any;
+  i: number;
+  gotoAnnotations: (idx: number) => void;
+  annotationList: any[];
+  setAnnotations: (arr: any[]) => void;
+}) => {
+  const [edit, setEdit] = useState<boolean>(false);
+  const [description, setDescription] = useState<string>(
+    anno.description ?? "",
+  );
+
+  const handleEditAnnotation = (e: ChangeEvent<HTMLInputElement>) => {
+    setDescription(e.target.value);
+  };
+
+  const handleSubmit = () => {
+    const newAnnotationList = annotationList.map(item => ({
+      ...item,
+      description: item.id === anno.id ? description : anno.description,
+    }));
+    setAnnotations(newAnnotationList);
+    setEdit(false);
+  };
+
+  return (
+    <li
+      key={`${anno.title}${i}`}
+      className="flex flex-row items-center justify-center w-full"
+    >
+      <div>{i + 1}</div>
+      {!edit ? (
+        <div className="ml-auto w-100">{anno.description}</div>
+      ) : (
+        <input
+          type="text"
+          className="w-100 border-2 border-black ml-auto"
+          onChange={handleEditAnnotation}
+          defaultValue={anno.description}
+        />
+      )}
+
+      {!edit ? (
+        <button
+          key={i}
+          onClick={() => setEdit(true)}
+          className="bg-black w-30 h-50 text-white ml-auto"
+        >
+          Edit
+        </button>
+      ) : (
+        <button
+          key={i}
+          onClick={handleSubmit}
+          className="bg-black w-30 h-50 text-white ml-auto"
+        >
+          Ok
+        </button>
+      )}
+      <button
+        key={i + anno.description}
+        onClick={() => gotoAnnotations(i)}
+        className="bg-black w-30 h-50 text-white ml-auto"
+      >
+        camera
+      </button>
+    </li>
+  );
+};
+
+const Buttons = ({
+  gotoAnnotations,
+  annotations,
+  setAnnotations,
+}: {
+  gotoAnnotations: (idx: number) => void;
+  annotations: any[];
+  setAnnotations: (arr: any[]) => void;
+}) => {
+  return (
+    <div className="w-300 h-auto flex flex-column border-red-200 border-2">
+      <ul className="w-full">
+        {annotations.map((anno: any, i: number) => {
+          return (
+            <Item
+              anno={anno}
+              i={i}
+              gotoAnnotations={gotoAnnotations}
+              key={i}
+              annotationList={annotations}
+              setAnnotations={setAnnotations}
+            />
+          );
+        })}
+      </ul>
+    </div>
+  );
+};
+
 const ModelCanvas = () => {
   const canvasRef = useRef<any>();
   const controlsRef = useRef<any>();
@@ -117,6 +222,7 @@ const ModelCanvas = () => {
     setAnnotations(prevState => [
       ...prevState,
       {
+        id: annotations.length,
         cameraPos: {
           x: camera.position.x,
           y: camera.position.y,
@@ -127,16 +233,18 @@ const ModelCanvas = () => {
           y: point.y,
           z: point.z,
         },
+        title: "",
+        description: "",
       },
     ]);
   };
 
-  function gotoAnnotation(idx: number) {
+  const gotoAnnotation = (idx: number) => {
     setLerping(true);
     setTo(annotations[idx].cameraPos);
     setTarget(annotations[idx].lookAt);
     setSelected(idx);
-  }
+  };
 
   return (
     <div>
@@ -146,7 +254,7 @@ const ModelCanvas = () => {
       >
         snapshot
       </button>
-      <div className="w-1200 h-600 mt-20 border-2">
+      <div className="w-1500 h-600 mt-20 border-2 flex">
         <Suspense fallback={"loading"}>
           <Canvas
             ref={canvasRef}
@@ -184,6 +292,11 @@ const ModelCanvas = () => {
             />
           </Canvas>
         </Suspense>
+        <Buttons
+          gotoAnnotations={gotoAnnotation}
+          annotations={annotations}
+          setAnnotations={setAnnotations}
+        />
       </div>
     </div>
   );

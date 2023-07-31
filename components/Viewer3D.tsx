@@ -19,7 +19,7 @@ const Viewer3D = ({
   setIsRotating: (rotate: boolean) => void;
   onClickGroup: (e: any) => void;
 }) => {
-  const path = "/models/deer.glb";
+  const path = "/models/test1.glb";
 
   const result = useGLTF(path);
   result.scene.updateMatrixWorld();
