@@ -100,6 +100,13 @@ const Item = ({
     setEdit(false);
   };
 
+  const handleDeleteAnnotation = () => {
+    const newAnnotationList = annotationList.filter(item => {
+      return item.id !== anno.id;
+    });
+    setAnnotations(newAnnotationList);
+  };
+
   return (
     <li
       key={`${anno.title}${i}`}
@@ -134,6 +141,13 @@ const Item = ({
           Ok
         </button>
       )}
+      <button
+        key={i + "delete"}
+        onClick={handleDeleteAnnotation}
+        className="bg-black w-30 h-50 text-white ml-auto"
+      >
+        delete
+      </button>
       <button
         key={i + "camera"}
         onClick={() => gotoAnnotations(i)}
@@ -216,7 +230,7 @@ const ModelCanvas = () => {
   };
 
   const onClickGroup = (e: any) => {
-    const { point, pointer, intersections, camera } = e;
+    const { point, camera } = e;
     setAnnotations(prevState => [
       ...prevState,
       {
