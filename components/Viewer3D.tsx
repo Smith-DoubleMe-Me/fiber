@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useGLTF } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useState, useRef, forwardRef } from "react";
+import { ThreeEvent, useFrame } from "@react-three/fiber";
+import { GLTF } from "three/examples/jsm/loaders/GLTFLoader";
 
 const Viewer3D = ({
   capturing,
@@ -11,17 +11,21 @@ const Viewer3D = ({
   isRotating,
   setIsRotating,
   onClickGroup,
+  result,
+  groupRef,
 }: {
   capturing: boolean;
   setCapturing: (capture: boolean) => void;
   capture: () => void;
   isRotating: boolean;
   setIsRotating: (rotate: boolean) => void;
-  onClickGroup: (e: any) => void;
+  onClickGroup: (e: ThreeEvent<MouseEvent>) => void;
+  result: GLTF;
+  annotations: any[];
+  groupRef: any;
 }) => {
   const path = "/models/test1.glb";
 
-  const result = useGLTF(path);
   result.scene.updateMatrixWorld();
 
   const modelRef = useRef<any>();
@@ -53,11 +57,29 @@ const Viewer3D = ({
     }
   });
 
+  // useEffect(() => {
+  //   if (annotations.length > 0) {
+  //     const geometry = new THREE.BufferGeometry();
+  //     const material = new THREE.PointsMaterial({ color: 0xff0000, size: 10 });
+  //     const positions = new Float32Array([0, 0, 0]);
+  //     geometry.setAttribute(
+  //       "position",
+  //       new THREE.BufferAttribute(positions, 3),
+  //     );
+
+  //     annotations.map((a, i) => {
+  //       const points = new THREE.Points(geometry, material);
+  //       points.position.set(a.lookAt.x, a.lookAt.y, a.lookAt.z);
+  //       result.scene.add(points);
+  //     });
+  //   }
+  // }, [annotations]);
+
   return (
-    <group onClick={onClickGroup} dispose={null}>
+    <group onClick={onClickGroup} dispose={null} ref={groupRef}>
       <primitive object={result.scene} ref={modelRef} />
     </group>
   );
 };
 
-export default Viewer3D;
+export default forwardRef(Viewer3D);

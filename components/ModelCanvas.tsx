@@ -1,7 +1,15 @@
 "use client";
 
-import { ChangeEvent, memo, useRef, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import {
+  ChangeEvent,
+  DragEvent,
+  DragEventHandler,
+  memo,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { Canvas, ThreeEvent, useFrame } from "@react-three/fiber";
 import {
   Environment,
   OrbitControls,
@@ -10,6 +18,7 @@ import {
   Html,
 } from "@react-three/drei";
 import { Suspense } from "react";
+import * as THREE from "three";
 
 import Viewer3D from "@/components/Viewer3D";
 
@@ -23,53 +32,6 @@ function Animate({ controls, lerping, to, target }: any) {
 
   return <></>;
 }
-
-const Annotations = memo(({ selected, gotoAnnotation, annotations }: any) => {
-  return (
-    <>
-      {annotations.length > 0 &&
-        annotations.map((a: any, i: number) => {
-          return (
-            <Html key={i} position={[a.lookAt.x, a.lookAt.y, a.lookAt.z]}>
-              <svg
-                height="34"
-                width="34"
-                transform="translate(-16 -16)"
-                style={{ cursor: "pointer" }}
-              >
-                <circle
-                  cx="17"
-                  cy="17"
-                  r="16"
-                  stroke="white"
-                  strokeWidth="2"
-                  fill="rgba(0,0,0,.66)"
-                  onClick={() => gotoAnnotation(i)}
-                />
-                <text
-                  x="12"
-                  y="22"
-                  fill="white"
-                  fontSize={17}
-                  fontFamily="monospace"
-                  style={{ pointerEvents: "none" }}
-                >
-                  {i + 1}
-                </text>
-              </svg>
-              {a.description && i === selected && (
-                <div
-                  id={"desc_" + i}
-                  className="annotationDescription"
-                  dangerouslySetInnerHTML={{ __html: a.description }}
-                />
-              )}
-            </Html>
-          );
-        })}
-    </>
-  );
-});
 
 const Item = ({
   anno,
@@ -86,6 +48,7 @@ const Item = ({
 }) => {
   const [edit, setEdit] = useState<boolean>(false);
   const [description, setDescription] = useState<string>(anno.description);
+  const [target, setTarget] = useState<any>();
 
   const handleEditAnnotation = (e: ChangeEvent<HTMLInputElement>) => {
     setDescription(e.target.value);
@@ -191,12 +154,14 @@ const Buttons = ({
 const ModelCanvas = () => {
   const canvasRef = useRef<any>();
   const controlsRef = useRef<any>();
-  const annotationRef = useRef<any>(0);
+  const groupRef = useRef<any>();
 
-  const path = "/models/deer.glb";
+  const path = "/models/test1.glb";
 
   const result = useGLTF(path);
-  result.scene.updateMatrixWorld();
+
+  const raycaster = new THREE.Raycaster();
+  const moveMouse = new THREE.Vector2();
 
   const [capturing, setCapturing] = useState<boolean>(false);
   const [isRotating, setIsRotating] = useState<boolean>(false);
@@ -205,6 +170,7 @@ const ModelCanvas = () => {
   const [lerping, setLerping] = useState<boolean>(false);
   const [to, setTo] = useState<any>();
   const [target, setTarget] = useState<any>();
+  const [draggable, setDraggable] = useState<boolean>(false);
 
   const captureImage = () => {
     if (!capturing && !isRotating) {
@@ -229,8 +195,9 @@ const ModelCanvas = () => {
     document.body.removeChild(link);
   };
 
-  const onClickGroup = (e: any) => {
+  const onClickGroup = (e: ThreeEvent<MouseEvent>) => {
     const { point, camera } = e;
+    console.log(point);
     setAnnotations(prevState => [
       ...prevState,
       {
@@ -258,6 +225,72 @@ const ModelCanvas = () => {
     setSelected(idx);
   };
 
+  const dragEnter = (event: any) => {
+    controlsRef.current.enabled = false;
+    console.log(event);
+  };
+
+  const dragLeave = (event: any) => {
+    console.log(event);
+  };
+
+  const drag = (event: any) => {
+    console.log(event);
+    setTarget(Number(event.target.innerText));
+  };
+
+  const drop = (event: DragEvent<HTMLDivElement>) => {
+    moveMouse.x = (event.clientX / (canvasRef.current.width / 2)) * 2 - 1;
+    moveMouse.y = -(event.clientY / canvasRef.current.height) * 2 + 1;
+    //NOTE: drop 시 좌표 계산 이상하게 됨.
+
+    raycaster.setFromCamera(moveMouse, controlsRef.current.object);
+    const found = raycaster.intersectObject(result.scene);
+
+    console.log(found[0].point);
+
+    if (found.length > 0) {
+      const updateState = annotations.map(annotation => {
+        if (annotation.id + 1 === target) {
+          return {
+            ...annotation,
+            lookAt: {
+              x: found[0].point.x,
+              y: found[0].point.y,
+              z: found[0].point.z,
+            },
+          };
+        } else {
+          return annotation;
+        }
+      });
+      setAnnotations(updateState);
+    }
+  };
+
+  const allowDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    console.log(event);
+  };
+
+  const dragStart = (event: any) => {
+    console.log(event);
+  };
+
+  const dragEnd = (event: any) => {
+    console.log(event);
+  };
+
+  useEffect(() => {
+    document.addEventListener("dragstart", dragStart);
+    document.addEventListener("dragend", dragEnd);
+
+    return () => {
+      document.removeEventListener("dragstart", dragStart);
+      document.removeEventListener("dragend", dragEnd);
+    };
+  }, []);
+
   return (
     <div>
       <button
@@ -277,6 +310,10 @@ const ModelCanvas = () => {
             onPointerDown={() => {
               setLerping(false);
             }}
+            onDragEnter={dragEnter}
+            onDragLeave={dragLeave}
+            onDragOver={allowDrop}
+            onDrop={drop}
           >
             <Environment preset="sunset" />
             <Stage adjustCamera={selected > -1 ? false : true}>
@@ -287,15 +324,41 @@ const ModelCanvas = () => {
                 isRotating={isRotating}
                 setIsRotating={setIsRotating}
                 onClickGroup={onClickGroup}
+                result={result}
+                annotations={annotations}
+                groupRef={groupRef}
               />
             </Stage>
 
             <OrbitControls ref={controlsRef} />
-            <Annotations
-              selected={selected}
-              gotoAnnotation={gotoAnnotation}
-              annotations={annotations}
-            />
+            {/* <CycleRaycast
+              onChanged={(objects, cycle) => console.log(objects, cycle)}
+            /> */}
+            {annotations.length > 0 &&
+              annotations.map((a, i) => {
+                return (
+                  <Html
+                    as="div"
+                    key={i}
+                    position={[a.lookAt.x, a.lookAt.y, a.lookAt.z]}
+                  >
+                    <div
+                      className="w-34 h-34 cursor-pointer border-2 border-red-400 flex items-center justify-center text-white bg-black"
+                      draggable
+                      onDragStart={drag}
+                    >
+                      {i + 1}
+                    </div>
+                    {a.description && i === selected && (
+                      <div
+                        id={"desc_" + i}
+                        className="annotationDescription"
+                        dangerouslySetInnerHTML={{ __html: a.description }}
+                      />
+                    )}
+                  </Html>
+                );
+              })}
             <Animate
               controls={controlsRef}
               target={target}
