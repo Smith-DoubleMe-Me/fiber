@@ -225,71 +225,18 @@ const ModelCanvas = () => {
     setSelected(idx);
   };
 
-  const dragEnter = (event: any) => {
+  const handlePointerDown = (e: any) => {
+    e.preventDefault();
+    setDraggable(true);
     controlsRef.current.enabled = false;
-    console.log(event);
+    setSelected(Number(e.target.innerText));
   };
 
-  const dragLeave = (event: any) => {
-    console.log(event);
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDraggable(false);
+    controlsRef.current.enabled = true;
   };
-
-  const drag = (event: any) => {
-    console.log(event);
-    setTarget(Number(event.target.innerText));
-  };
-
-  const drop = (event: DragEvent<HTMLDivElement>) => {
-    moveMouse.x = (event.clientX / (canvasRef.current.width / 2)) * 2 - 1;
-    moveMouse.y = -(event.clientY / canvasRef.current.height) * 2 + 1;
-    //NOTE: drop 시 좌표 계산 이상하게 됨.
-
-    raycaster.setFromCamera(moveMouse, controlsRef.current.object);
-    const found = raycaster.intersectObject(result.scene);
-
-    console.log(found[0].point);
-
-    if (found.length > 0) {
-      const updateState = annotations.map(annotation => {
-        if (annotation.id + 1 === target) {
-          return {
-            ...annotation,
-            lookAt: {
-              x: found[0].point.x,
-              y: found[0].point.y,
-              z: found[0].point.z,
-            },
-          };
-        } else {
-          return annotation;
-        }
-      });
-      setAnnotations(updateState);
-    }
-  };
-
-  const allowDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    console.log(event);
-  };
-
-  const dragStart = (event: any) => {
-    console.log(event);
-  };
-
-  const dragEnd = (event: any) => {
-    console.log(event);
-  };
-
-  useEffect(() => {
-    document.addEventListener("dragstart", dragStart);
-    document.addEventListener("dragend", dragEnd);
-
-    return () => {
-      document.removeEventListener("dragstart", dragStart);
-      document.removeEventListener("dragend", dragEnd);
-    };
-  }, []);
 
   return (
     <div>
@@ -310,10 +257,6 @@ const ModelCanvas = () => {
             onPointerDown={() => {
               setLerping(false);
             }}
-            onDragEnter={dragEnter}
-            onDragLeave={dragLeave}
-            onDragOver={allowDrop}
-            onDrop={drop}
           >
             <Environment preset="sunset" />
             <Stage adjustCamera={selected > -1 ? false : true}>
@@ -327,6 +270,10 @@ const ModelCanvas = () => {
                 result={result}
                 annotations={annotations}
                 groupRef={groupRef}
+                setAnnotations={setAnnotations}
+                isDraggable={draggable}
+                setIsDraggable={setDraggable}
+                selected={selected}
               />
             </Stage>
 
@@ -345,7 +292,8 @@ const ModelCanvas = () => {
                     <div
                       className="w-34 h-34 cursor-pointer border-2 border-red-400 flex items-center justify-center text-white bg-black"
                       draggable
-                      onDragStart={drag}
+                      onPointerDown={handlePointerDown}
+                      onPointerUp={handlePointerUp}
                     >
                       {i + 1}
                     </div>
